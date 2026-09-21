@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>부산 청년·창업지원 포털 | B-Youth Startup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <style>
+    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+
+  <!-- 상단 헤더 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm">
+          B
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-tight text-slate-900">부산유스스타트</span>
+          <span class="hidden sm:inline-block text-xs bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full ml-1 border border-emerald-200">
+            ● 파이썬 백엔드 실시간 연동
+          </span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleSavedOnly()" id="savedFilterBtn" class="text-xs font-semibold text-slate-600 hover:text-red-500 bg-slate-100 px-3 py-2 rounded-lg transition flex items-center gap-1">
+          <span id="heartIcon">🤍</span> 관심 공고 (<span id="savedCount">0</span>)
+        </button>
+        <button onclick="openQuizModal()" class="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow hover:opacity-95 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          30초 맞춤 찾기
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 검색 배너 -->
+  <section class="bg-gradient-to-b from-blue-50/50 via-white to-slate-50 py-10 px-4 sm:px-6 lg:px-8 border-b border-slate-200/80">
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100/70 text-blue-800 text-xs font-semibold mb-3">
+        <span>📍 부산창업포털 크롤러 + K-Startup 정부 공식 공고 실시간 파이프라인</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        부산 청년·창업자를 위한<br/>
+        <span class="text-blue-600">실시간 맞춤 창업지원 포털</span>
+      </h1>
+      <p class="mt-2 text-sm text-slate-600 max-w-2xl mx-auto">
+        지역별, 분야별, 지원 대상별 실시간 필터로 나에게 딱 맞는 실제 창업 공고를 한눈에 확인하세요.
+      </p>
+
+      <!-- 검색창 -->
+      <div class="mt-6 max-w-2xl mx-auto relative">
+        <input 
+          id="searchInput"
+          type="text" 
+          placeholder="공고명, 주관기관, 키워드(오피스, 시제품, 특허) 검색..." 
+          class="w-full pl-12 pr-24 py-3.5 bg-white rounded-2xl border border-slate-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          oninput="applyFilter()"
+        />
+        <svg class="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <button onclick="resetSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg bg-slate-100">
+          초기화
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 메인 리스트 영역 -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    
+    <!-- 3단 필터 영역 (지역 / 분야 / 대상) -->
+    <div class="flex flex-col gap-3 mb-6 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+      
+      <!-- 1. 공고 지역 -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">지역</span>
+        <button onclick="setArea('all')" class="area-btn active px-3 py-1 text-xs font-semibold rounded-full bg-slate-900 text-white transition shrink-0" data-area="all">전체 지역</button>
+        <button onclick="setArea('busan')" class="area-btn px-3 py-1 text-xs font-semibold rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition shrink-0" data-area="busan">🌊 부산 전용</button>
+        <button onclick="setArea('national')" class="area-btn px-3 py-1 text-xs font-semibold rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition shrink-0" data-area="national">🇰🇷 전국 공고</button>
+      </div>
+
+      <!-- 2. 지원 분야 -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-2 border-t border-slate-100">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">분야</span>
+        <button onclick="setCategory('all')" class="cat-btn active px-3 py-1 text-xs font-semibold rounded-full bg-slate-900 text-white transition shrink-0" data-cat="all">전체 분야</button>
+        <button onclick="setCategory('funding')" class="cat-btn px-3 py-1 text-xs font-semibold rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition shrink-0" data-cat="funding">💰 사업화 자금</button>
+        <button onclick="setCategory('space')" class="cat-btn px-3 py-1 text-xs font-semibold rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition shrink-0" data-cat="space">🏢 무상 입주/공간</button>
+        <button onclick="setCategory('mentor')" class="cat-btn px-3 py-1 text-xs font-semibold rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition shrink-0" data-cat="mentor">멘토링 & 상담</button>
+        <button onclick="setCategory('contest')" class="cat-btn px-3 py-1 text-xs font-semibold rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition shrink-0" data-cat="contest">🏆 경진대회/IR</button>
+      </div>
+
+      <!-- 3. 지원 대상 -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-2 border-t border-slate-100">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">대상</span>
+        <button onclick="setTarget('all')" class="tgt-btn active px-2.5 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-700 border border-blue-200 transition shrink-0" data-tgt="all">모든 대상</button>
+        <button onclick="setTarget('pre')" class="tgt-btn px-2.5 py-1 text-xs font-medium rounded-md bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition shrink-0" data-tgt="pre">💡 예비 창업자</button>
+        <button onclick="setTarget('early')" class="tgt-btn px-2.5 py-1 text-xs font-medium rounded-md bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition shrink-0" data-tgt="early">🚀 초기 스타트업</button>
+      </div>
+
+    </div>
+
+    <!-- 통계 안내 -->
+    <div class="flex justify-between items-center mb-4">
+      <p class="text-sm text-slate-600">
+        실시간 수신 공고: <span id="programCount" class="font-bold text-blue-600">조회 중...</span>
+      </p>
+      <button onclick="fetchRealtimeNotices()" class="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        실시간 새로고침
+      </button>
+    </div>
+
+    <!-- 로딩 스피너 -->
+    <div id="loadingBox" class="py-20 text-center">
+      <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="text-sm font-semibold text-slate-700">파이썬 백엔드 서버에서 실시간 공고를 분석·수신 중입니다...</p>
+    </div>
+
+    <!-- 카드 그리드 -->
+    <div id="cardGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
+
+    <!-- 에러 표시 -->
+    <div id="errorBox" class="hidden py-16 text-center bg-red-50 rounded-2xl border border-red-100 p-6">
+      <p class="text-base font-bold text-red-600">공고 데이터를 가져오지 못했습니다.</p>
+      <p id="errorMsg" class="text-xs text-red-500 mt-1 mb-4"></p>
+      <button onclick="fetchRealtimeNotices()" class="px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-semibold">다시 시도</button>
+    </div>
+  </main>
+
+  <!-- 상세 정보 모달 -->
+  <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative border border-slate-100 max-h-[90vh] overflow-y-auto">
+      <button onclick="closeModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- 30초 맞춤 찾기 모달 -->
+  <div id="quizModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative border border-slate-100">
+      <button onclick="closeQuizModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <div id="quizStep1">
+        <div class="text-xs font-bold text-blue-600 uppercase mb-1">STEP 1 / 2</div>
+        <h3 class="text-lg font-bold text-slate-900 mb-4">현재 창업 준비 단계는?</h3>
+        <div class="space-y-2.5">
+          <button onclick="handleQuizAnswer('pre')" class="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition">
+            <p class="text-sm font-semibold text-slate-800">💡 예비 창업자</p>
+            <p class="text-xs text-slate-500 mt-0.5">아이디어 구체화, 사업자등록 전</p>
+          </button>
+          <button onclick="handleQuizAnswer('early')" class="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition">
+            <p class="text-sm font-semibold text-slate-800">🚀 초기 스타트업</p>
+            <p class="text-xs text-slate-500 mt-0.5">사업자등록 완료, 3~7년 이내 기업</p>
+          </button>
+        </div>
+      </div>
+
+      <div id="quizStep2" class="hidden">
+        <div class="text-xs font-bold text-blue-600 uppercase mb-1">STEP 2 / 2</div>
+        <h3 class="text-lg font-bold text-slate-900 mb-4">지금 가장 필요한 지원은?</h3>
+        <div class="space-y-2.5">
+          <button onclick="handleQuizComplete('space')" class="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition">
+            <p class="text-sm font-semibold text-slate-800">🏢 사무실/회의실 등 무상 공간</p>
+            <p class="text-xs text-slate-500 mt-0.5">센텀 코워킹 스페이스, 무료 오피스</p>
+          </button>
+          <button onclick="handleQuizComplete('funding')" class="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition">
+            <p class="text-sm font-semibold text-slate-800">💰 시제품 제작 및 사업화 자금</p>
+            <p class="text-xs text-slate-500 mt-0.5">개발비, 제작 바우처, 초기 지원금</p>
+          </button>
+          <button onclick="handleQuizComplete('mentor')" class="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition">
+            <p class="text-sm font-semibold text-slate-800">전문가 멘토링 & 특허(IP) 상담</p>
+            <p class="text-xs text-slate-500 mt-0.5">지식재산권 출원 및 1:1 심층 자문</p>
+          </button>
+        </div>
+      </div>
+
+      <div id="quizResult" class="hidden text-center py-4">
+        <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <h4 class="text-lg font-bold text-slate-900">맞춤 공고 매칭 완료!</h4>
+        <p class="text-xs text-slate-600 mt-1 mb-5">조건에 꼭 맞는 실제 공고를 정렬했습니다.</p>
+        <button onclick="closeQuizModal()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition">
+          결과 보러 가기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 mt-12">
+    <p>부산 청년·대학생 창업지원 포털 프로젝트 (B-Youth Startup)</p>
+    <p class="mt-1 text-slate-400">데이터 출처: 중소벤처기업부 K-Startup, 부산창조경제혁신센터, 부산테크노파크, 부산경제진흥원 실시간 연동</p>
+  </footer>
+
+  <script>
+    let allPrograms = [];
+    let selectedArea = 'all';
+    let selectedCat = 'all';
+    let selectedTgt = 'all';
+    let savedIds = JSON.parse(localStorage.getItem('saved_programs') || '[]');
+    let showSavedOnly = false;
+    let quizTarget = 'all';
+
+    // 백엔드 파이썬 API 호출
+    async function fetchRealtimeNotices() {
+      const loading = document.getElementById('loadingBox');
+      const grid = document.getElementById('cardGrid');
+      const errorBox = document.getElementById('errorBox');
+      const count = document.getElementById('programCount');
+
+      loading.classList.remove('hidden');
+      grid.classList.add('hidden');
+      errorBox.classList.add('hidden');
+      count.textContent = '조회 중...';
+
+      try {
+        const res = await fetch('/api/programs');
+        if (!res.ok) throw new Error(`서버 응답 오류 (코드: ${res.status})`);
+        const result = await res.json();
+
+        if (result.status === 'success') {
+          allPrograms = result.data;
+          updateSavedCount();
+          applyFilter();
+        } else {
+          throw new Error(result.message || '데이터를 가져오지 못했습니다.');
+        }
+      } catch (err) {
+        loading.classList.add('hidden');
+        errorBox.classList.remove('hidden');
+        document.getElementById('errorMsg').textContent = err.message + " (백엔드 서버 상태를 확인하세요)";
+        count.textContent = '0개';
+      }
+    }
+
+    // 💡 [공고지역 마감일] -> [주관 기관] -> [내용]
+    function renderCards(list) {
+      const loading = document.getElementById('loadingBox');
+      const grid = document.getElementById('cardGrid');
+      const count = document.getElementById('programCount');
+
+      loading.classList.add('hidden');
+      grid.classList.remove('hidden');
+      count.textContent = `${list.length}개`;
+      grid.innerHTML = '';
+
+      if (list.length === 0) {
+        grid.innerHTML = `<div class="col-span-3 py-16 text-center text-slate-500 text-sm">해당 조건에 일치하는 공고가 없습니다.</div>`;
+        return;
+      }
+
+      list.forEach(item => {
+        const isSaved = savedIds.includes(item.id);
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl p-6 border border-slate-200/80 hover:shadow-lg hover:border-blue-400 transition cursor-pointer flex flex-col justify-between group relative";
+
+        const localBadge = item.isLocal 
+          ? `<span class="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-600 text-white">부산 공고</span>` 
+          : `<span class="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-700">${item.area || '전국'}</span>`;
+
+        card.innerHTML = `
+          <div>
+            <!-- 1. [공고지역] + [마감일] + [찜 버튼] -->
+            <div class="flex items-center justify-between gap-2 mb-2.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                ${localBadge}
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${item.badgeColor} border">
+                  ${item.dday} (${item.status})
+                </span>
+              </div>
+              <button onclick="toggleSave(event, '${item.id}')" class="text-slate-400 hover:text-red-500 text-base transition p-1">
+                ${isSaved ? '❤️' : '🤍'}
+              </button>
+            </div>
+
+            <!-- 2. [주관 기관] -->
+            <div class="mb-2">
+              <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 inline-block truncate max-w-full">
+                🏢 ${item.agency}
+              </span>
+            </div>
+
+            <!-- 3. [내용] (공고명 + 세부 요약) -->
+            <div class="mb-4">
+              <h3 class="font-bold text-slate-900 text-base group-hover:text-blue-600 transition line-clamp-2 leading-snug mb-1.5">
+                ${item.title}
+              </h3>
+              <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                ${item.description}
+              </p>
+            </div>
+          </div>
+
+          <!-- 하단: 분야 / 대상 / 상세보기 -->
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div class="flex items-center gap-1.5">
+              <span class="font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded">${item.categoryName}</span>
+              <span class="font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded">${item.targetName}</span>
+            </div>
+            <span class="text-blue-600 font-semibold text-xs flex items-center gap-0.5 group-hover:translate-x-0.5 transition">상세보기 ↗</span>
+          </div>
+        `;
+        card.onclick = (e) => {
+          if (e.target.tagName !== 'BUTTON') openModal(item);
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    function applyFilter() {
+      const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+
+      const filtered = allPrograms.filter(item => {
+        const matchArea = (selectedArea === 'all') || 
+          (selectedArea === 'busan' && (item.isLocal || (item.area && item.area.includes('부산')) || item.title.includes('부산'))) ||
+          (selectedArea === 'national' && (!item.isLocal && item.area && item.area.includes('전국')));
+
+        const matchCat = (selectedCat === 'all') || (item.category === selectedCat);
+        const matchTgt = (selectedTgt === 'all') || (item.target === selectedTgt);
+        const matchSaved = !showSavedOnly || savedIds.includes(item.id);
+        const matchKey = !keyword || 
+          item.title.toLowerCase().includes(keyword) ||
+          item.agency.toLowerCase().includes(keyword) ||
+          (item.area && item.area.toLowerCase().includes(keyword)) ||
+          (item.description && item.description.toLowerCase().includes(keyword));
+
+        return matchArea && matchCat && matchTgt && matchSaved && matchKey;
+      });
+
+      renderCards(filtered);
+    }
+
+    function setArea(val) {
+      selectedArea = val;
+      document.querySelectorAll('.area-btn').forEach(btn => {
+        btn.className = (btn.getAttribute('data-area') === val)
+          ? "area-btn active px-3 py-1 text-xs font-semibold rounded-full bg-slate-900 text-white transition shrink-0"
+          : "area-btn px-3 py-1 text-xs font-semibold rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition shrink-0";
+      });
+      applyFilter();
+    }
+
+    function setCategory(cat) {
+      selectedCat = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.className = (btn.getAttribute('data-cat') === cat)
+          ? "cat-btn active px-3 py-1 text-xs font-semibold rounded-full bg-slate-900 text-white transition shrink-0"
+          : "cat-btn px-3 py-1 text-xs font-semibold rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition shrink-0";
+      });
+      applyFilter();
+    }
+
+    function setTarget(tgt) {
+      selectedTgt = tgt;
+      document.querySelectorAll('.tgt-btn').forEach(btn => {
+        btn.className = (btn.getAttribute('data-tgt') === tgt)
+          ? "tgt-btn active px-2.5 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-700 border border-blue-200 transition shrink-0"
+          : "tgt-btn px-2.5 py-1 text-xs font-medium rounded-md bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition shrink-0";
+      });
+      applyFilter();
+    }
+
+    function toggleSave(e, id) {
+      e.stopPropagation();
+      if (savedIds.includes(id)) {
+        savedIds = savedIds.filter(x => x !== id);
+      } else {
+        savedIds.push(id);
+      }
+      localStorage.setItem('saved_programs', JSON.stringify(savedIds));
+      updateSavedCount();
+      applyFilter();
+    }
+
+    function updateSavedCount() {
+      document.getElementById('savedCount').textContent = savedIds.length;
+    }
+
+    function toggleSavedOnly() {
+      showSavedOnly = !showSavedOnly;
+      const btn = document.getElementById('savedFilterBtn');
+      const icon = document.getElementById('heartIcon');
+      if (showSavedOnly) {
+        btn.className = "text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg transition flex items-center gap-1";
+        icon.textContent = '❤️';
+      } else {
+        btn.className = "text-xs font-semibold text-slate-600 hover:text-red-500 bg-slate-100 px-3 py-2 rounded-lg transition flex items-center gap-1";
+        icon.textContent = '🤍';
+      }
+      applyFilter();
+    }
+
+    function resetSearch() {
+      document.getElementById('searchInput').value = '';
+      applyFilter();
+    }
+
+    function openModal(item) {
+      const modalContent = document.getElementById('modalContent');
+      modalContent.innerHTML = `
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full ${item.badgeColor} border">${item.dday}</span>
+          <span class="text-xs text-slate-500 font-medium">${item.agency}</span>
+        </div>
+        <h2 class="text-xl font-bold text-slate-900 leading-snug mb-3">${item.title}</h2>
+        
+        <div class="bg-blue-50 rounded-xl p-4 mb-4">
+          <div class="text-xs text-blue-700 font-medium">분야 / 지원 대상</div>
+          <div class="text-base font-bold text-blue-900 mt-0.5">${item.categoryName} · ${item.targetName}</div>
+        </div>
+
+        <div class="space-y-3 text-xs text-slate-600 my-4">
+          <div>
+            <strong class="text-slate-800 block mb-1">사업 개요</strong>
+            <p class="leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200">${item.description}</p>
+          </div>
+          <div>
+            <strong class="text-slate-800 block mb-1">접수 및 모집 기간</strong>
+            <p class="text-slate-700 font-medium">${item.period}</p>
+          </div>
+          <div>
+            <strong class="text-slate-800 block mb-1">공고 지역</strong>
+            <p class="text-slate-700 font-medium">${item.area || '전국'}</p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex gap-2">
+          <button onclick="closeModal()" class="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50">닫기</button>
+          <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold text-center flex items-center justify-center gap-1 shadow-sm">
+            공고 원문 공식 접수처 ↗
+          </a>
+        </div>
+      `;
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('detailModal').classList.add('hidden');
+    }
+
+    function openQuizModal() {
+      document.getElementById('quizStep1').classList.remove('hidden');
+      document.getElementById('quizStep2').classList.add('hidden');
+      document.getElementById('quizResult').classList.add('hidden');
+      document.getElementById('quizModal').classList.remove('hidden');
+    }
+
+    function closeQuizModal() {
+      document.getElementById('quizModal').classList.add('hidden');
+    }
+
+    function handleQuizAnswer(val) {
+      quizTarget = val;
+      document.getElementById('quizStep1').classList.add('hidden');
+      document.getElementById('quizStep2').classList.remove('hidden');
+    }
+
+    function handleQuizComplete(cat) {
+      document.getElementById('quizStep2').classList.add('hidden');
+      document.getElementById('quizResult').classList.remove('hidden');
+      setTarget(quizTarget);
+      setCategory(cat);
+    }
+
+    window.addEventListener('DOMContentLoaded', fetchRealtimeNotices);
+  </script>
+</body>
+</html>
