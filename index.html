@@ -209,7 +209,7 @@
     let showSavedOnly = false;
     let quizTarget = 'all';
 
-    // 백엔드 파이썬 API 호출
+    // 백엔드 파이썬 API 호출 및 저장소 동기화
     async function fetchRealtimeNotices() {
       const loading = document.getElementById('loadingBox');
       const grid = document.getElementById('cardGrid');
@@ -228,7 +228,10 @@
 
         if (result.status === 'success') {
           allPrograms = result.data;
-          updateSavedCount();
+
+          // 💡 [핵심 해결 로직]: 현재 실제로 수신된 공고에 존재하는 ID만 남기고, 사라진 과거 공고 ID는 자동 정리
+          syncSavedPrograms();
+
           applyFilter();
         } else {
           throw new Error(result.message || '데이터를 가져오지 못했습니다.');
@@ -241,7 +244,15 @@
       }
     }
 
-    // 💡 [공고지역 마감일] -> [주관 기관] -> [내용]
+    // 사라진 공고를 브라우저 저장소에서 자동으로 제거하고 숫자를 동기화하는 함수
+    function syncSavedPrograms() {
+      const activeIds = new Set(allPrograms.map(item => item.id));
+      // 현재 존재하는 공고만 필터링
+      savedIds = savedIds.filter(id => activeIds.has(id));
+      localStorage.setItem('saved_programs', JSON.stringify(savedIds));
+      updateSavedCount();
+    }
+
     function renderCards(list) {
       const loading = document.getElementById('loadingBox');
       const grid = document.getElementById('cardGrid');
@@ -268,7 +279,6 @@
 
         card.innerHTML = `
           <div>
-            <!-- 1. [공고지역] + [마감일] + [찜 버튼] -->
             <div class="flex items-center justify-between gap-2 mb-2.5">
               <div class="flex items-center gap-1.5 flex-wrap">
                 ${localBadge}
@@ -281,14 +291,12 @@
               </button>
             </div>
 
-            <!-- 2. [주관 기관] -->
             <div class="mb-2">
               <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 inline-block truncate max-w-full">
                 🏢 ${item.agency}
               </span>
             </div>
 
-            <!-- 3. [내용] (공고명 + 세부 요약) -->
             <div class="mb-4">
               <h3 class="font-bold text-slate-900 text-base group-hover:text-blue-600 transition line-clamp-2 leading-snug mb-1.5">
                 ${item.title}
@@ -299,7 +307,6 @@
             </div>
           </div>
 
-          <!-- 하단: 분야 / 대상 / 상세보기 -->
           <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <div class="flex items-center gap-1.5">
               <span class="font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded">${item.categoryName}</span>
@@ -381,6 +388,7 @@
     }
 
     function updateSavedCount() {
+      // 💡 현재 실제 유효한 관심 공고 수만 카운트 표시
       document.getElementById('savedCount').textContent = savedIds.length;
     }
 
