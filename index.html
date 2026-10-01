@@ -209,7 +209,14 @@
     let showSavedOnly = false;
     let quizTarget = 'all';
 
-    // 백엔드 파이썬 API 호출 및 저장소 동기화
+    // 창업 지원사업과 무관한 공고 제외 키워드 목록
+    const EXCLUDE_KEYWORDS = [
+      '평가위원', '심사위원', '자문위원', '수요조사', '용역', '입찰', 
+      '인력양성', '교육생', '재직자', '채용', '직원', '기간제', 
+      '선정결과', '결과공고', '설문조사', '물품구매'
+    ];
+
+    // 백엔드 파이썬 API 호출 및 정제
     async function fetchRealtimeNotices() {
       const loading = document.getElementById('loadingBox');
       const grid = document.getElementById('cardGrid');
@@ -227,9 +234,12 @@
         const result = await res.json();
 
         if (result.status === 'success') {
-          allPrograms = result.data;
+          // 💡 창업 무관 공고 필터링
+          allPrograms = (result.data || []).filter(item => {
+            return !EXCLUDE_KEYWORDS.some(kw => item.title.includes(kw));
+          });
 
-          // 💡 [핵심 해결 로직]: 현재 실제로 수신된 공고에 존재하는 ID만 남기고, 사라진 과거 공고 ID는 자동 정리
+          // 사라진 공고 브라우저 북마크 동기화
           syncSavedPrograms();
 
           applyFilter();
@@ -244,10 +254,8 @@
       }
     }
 
-    // 사라진 공고를 브라우저 저장소에서 자동으로 제거하고 숫자를 동기화하는 함수
     function syncSavedPrograms() {
       const activeIds = new Set(allPrograms.map(item => item.id));
-      // 현재 존재하는 공고만 필터링
       savedIds = savedIds.filter(id => activeIds.has(id));
       localStorage.setItem('saved_programs', JSON.stringify(savedIds));
       updateSavedCount();
@@ -264,7 +272,7 @@
       grid.innerHTML = '';
 
       if (list.length === 0) {
-        grid.innerHTML = `<div class="col-span-3 py-16 text-center text-slate-500 text-sm">해당 조건에 일치하는 공고가 없습니다.</div>`;
+        grid.innerHTML = `<div class="col-span-3 py-16 text-center text-slate-500 text-sm">해당 조건에 일치하는 창업 지원 공고가 없습니다.</div>`;
         return;
       }
 
@@ -388,7 +396,6 @@
     }
 
     function updateSavedCount() {
-      // 💡 현재 실제 유효한 관심 공고 수만 카운트 표시
       document.getElementById('savedCount').textContent = savedIds.length;
     }
 
