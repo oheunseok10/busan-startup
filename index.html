@@ -211,13 +211,8 @@
       '평가위원', '심사위원', '자문위원', '수요조사', '용역', '입찰', 
       '인력양성', '교육생', '재직자', '채용', '직원', '기간제', 
       '선정결과', '결과공고', '설문조사', '물품구매',
-      '청년 창업특례자금', '창업특례자금' // 💡 제외 요청된 공고 키워드
+      '청년 창업특례자금', '창업특례자금'
     ];
-
-    // 만료된 고정 공고 링크 보정 맵핑
-    const OFFICIAL_FALLBACK_LINKS = {
-      'bs-2255': 'https://ccei.creativekorea.or.kr/busan/' // 부산창조경제혁신센터 공식 홈페이지
-    };
 
     // 백엔드 파이썬 API 호출 및 정제
     async function fetchRealtimeNotices() {
@@ -237,15 +232,15 @@
         const result = await res.json();
 
         if (result.status === 'success') {
-          // 💡 특정 공고 ID(bs-530) 및 제외 키워드 매칭 공고 완전 제거
           allPrograms = (result.data || [])
             .filter(item => {
-              if (item.id === 'bs-530') return false; // 창업특례자금 ID 직접 제외
+              if (item.id === 'bs-530') return false; // 창업특례자금 제외
               return !EXCLUDE_KEYWORDS.some(kw => item.title.includes(kw));
             })
             .map(item => {
-              if (OFFICIAL_FALLBACK_LINKS[item.id]) {
-                item.link = OFFICIAL_FALLBACK_LINKS[item.id];
+              // 💡 스타트업 원스톱 지원센터 공고 링크를 K-Startup 공식 온라인 상담창구 주소로 연결
+              if (item.id === 'bs-2255' || item.title.includes('스타트업 원스톱 지원센터')) {
+                item.link = 'https://www.k-startup.go.kr/onestop/main/index.do';
               }
               return item;
             });
