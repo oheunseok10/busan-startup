@@ -21,9 +21,6 @@
         </div>
         <div>
           <span class="font-bold text-lg tracking-tight text-slate-900">부산유스스타트</span>
-          <span class="hidden sm:inline-block text-xs bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full ml-1 border border-emerald-200">
-            ● 파이썬 백엔드 실시간 연동
-          </span>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -117,7 +114,7 @@
     <!-- 로딩 스피너 -->
     <div id="loadingBox" class="py-20 text-center">
       <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p class="text-sm font-semibold text-slate-700">파이썬 백엔드 서버에서 실시간 공고를 분석·수신 중입니다...</p>
+      <p class="text-sm font-semibold text-slate-700">실시간 공고를 수신 중입니다...</p>
     </div>
 
     <!-- 카드 그리드 -->
@@ -234,14 +231,11 @@
         const result = await res.json();
 
         if (result.status === 'success') {
-          // 💡 창업 무관 공고 필터링
           allPrograms = (result.data || []).filter(item => {
             return !EXCLUDE_KEYWORDS.some(kw => item.title.includes(kw));
           });
 
-          // 사라진 공고 브라우저 북마크 동기화
           syncSavedPrograms();
-
           applyFilter();
         } else {
           throw new Error(result.message || '데이터를 가져오지 못했습니다.');
